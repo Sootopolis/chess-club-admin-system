@@ -15,7 +15,7 @@ def cli():
 
 @click.command()
 @click.option("--club-name", "-c")
-@click.option("--readonly", "-r", is_flag=True, default=True)
+@click.option("--readonly", "-r", is_flag=True, default=False)
 def membership(club_name: Optional[str] = None, readonly: bool = False):
     configs = Configs.get_configs(club_name)
     session = get_session(configs)
