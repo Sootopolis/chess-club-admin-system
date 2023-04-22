@@ -81,7 +81,10 @@ def compare_membership(session: requests.Session, club: Club) -> list[Member]:
 
     changes.summarise(existing)
 
-    return sorted(existing.current | existing.archive)
+    return sorted(
+        existing.current | existing.archive,
+        key=lambda x: (-x.is_active, x.username),
+    )
 
 
 def update_membership(
