@@ -344,7 +344,7 @@ class _RecruitmentConfigs(dw.JSONWizard):
 class Configs(dw.JSONWizard):
     email: str
     username: str
-    club: str
+    club_name: str = field(metadata=_remap("club"))
     recruitment: _RecruitmentConfigs
 
     @staticmethod
@@ -364,6 +364,16 @@ class Configs(dw.JSONWizard):
             "From": self.email,
             "Accept": "application/json",
         }
+
+    @property
+    def session(self) -> requests.Session:
+        sess = requests.session()
+        sess.headers.update(self.http_header)
+        return sess
+
+    @property
+    def club(self) -> Club:
+        return Club.from_str(self.session, self.club_name)
 
 
 @dataclass
@@ -400,7 +410,7 @@ class MembershipChanges:
     def __print_member(title: str, member_list: list[Member]) -> None:
         if member_list:
             print(title)
-            for member in member_list:
+            for member in sorted(member_list, key=lambda x: x.username):
                 print(member.username, member.url)
 
     @staticmethod
@@ -409,7 +419,9 @@ class MembershipChanges:
     ) -> None:
         if member_list:
             print(title)
-            for member_old, member_new in member_list:
+            for member_old, member_new in sorted(
+                member_list, key=lambda x: x[1].username
+            ):
                 print(
                     member_old.username,
                     "->",

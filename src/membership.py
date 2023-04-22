@@ -1,8 +1,10 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
+import click
 import requests
+
 from .functions import get_existing_members, updated_members_data
-from .structures import Club, Member, MembershipChanges
+from .structures import Club, Configs, Member, MembershipChanges
 
 
 def get_player_id_map(members: Iterable[Member]) -> dict[int, Member]:
@@ -87,9 +89,13 @@ def compare_membership(session: requests.Session, club: Club) -> list[Member]:
     )
 
 
-def update_membership(
-    session: requests.Session, club: Club, readonly: bool = False
+@click.command()
+@click.option("--club-name", "-c")
+@click.option("--readonly", "-r", is_flag=True, default=False)
+def membership(
+    club_name: Optional[str] = None, readonly: bool = False
 ) -> None:
-    members = compare_membership(session, club)
+    configs = Configs.get_configs(club_name)
+    members = compare_membership(configs.session, configs.club)
     if not readonly:
-        updated_members_data(club.url_name, members)
+        updated_members_data(configs.club.url_name, members)

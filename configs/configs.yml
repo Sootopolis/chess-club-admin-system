@@ -38,3 +38,22 @@ club_configs:
             max_clubs: 35
             max_hrs_per_move: 18
             max_hrs_offline: 48
+    devon-chess:
+        email: yuzhuo.w@gmail.com
+        username: Wallace_Wang
+        club: devon-chess
+        recruitment:
+            avoid_admins: true
+            invited_expiry: 180
+            timeout_expiry: 90
+            checked_expiry: 30
+            min_elo: 1000
+            max_elo: 2200
+            min_score_rate: 0.45
+            max_score_rate: 0.85
+            min_matches_played: 12
+            min_matches_ongoing: 1
+            max_games_ongoing: 100
+            max_clubs: 35
+            max_hrs_per_move: 18
+            max_hrs_offline: 48
