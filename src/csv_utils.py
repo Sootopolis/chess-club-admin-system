@@ -18,7 +18,7 @@ def get_existing_members_from_csv(club_url_name: str) -> ExistingMembers:
                     username=row[0],
                     player_id=int(row[1]),
                     joined=int(row[2]),
-                    is_active=not (bool(int(row[3])) or bool(int(row[4]))),
+                    is_active=bool(int(row[3])),
                 )
                 if member.is_active:
                     members.current.add(member)
