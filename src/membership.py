@@ -1,6 +1,6 @@
 from typing import Iterable
-import requests
 
+import requests
 from .functions import get_existing_members, updated_members_data
 from .structures import Club, Member, MembershipChanges
 

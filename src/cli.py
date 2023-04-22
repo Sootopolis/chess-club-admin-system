@@ -1,11 +1,9 @@
 from typing import Optional
 import click
 
-from .structures import Club, Configs
-
-from .membership import update_membership
-
 from .functions import get_session
+from .membership import update_membership
+from .structures import Club, Configs
 
 
 @click.group()
