@@ -65,7 +65,7 @@ class _Player(dw.JSONWizard):
 
     @property
     def api(self) -> str:
-        return f"https://api.chess.com/pub/player/{self.username}"
+        return f"https://api.chess.com/pub/member/{self.username}"
 
     def update_player_id(self, session: requests.Session) -> None:
         if self.player_id is None:
