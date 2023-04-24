@@ -1,7 +1,7 @@
 import csv
 import os
 
-from .structures import RecordMembers, RecordMembersForTracking, Member
+from .structures import RecordMembers, Member
 
 DIR = "CSV_files/{}"
 PATH = f"{DIR}/members.csv"
@@ -10,8 +10,8 @@ HEADER = ("username", "player_id", "joined", "is_active")
 
 def get_existing_members_from_csv(
     club_url_name: str,
-) -> RecordMembersForTracking:
-    members = RecordMembersForTracking()
+) -> list[Member]:
+    members: list[Member] = []
     try:
         with open(PATH.format(club_url_name)) as stream:
             reader = csv.reader(stream)
@@ -23,10 +23,7 @@ def get_existing_members_from_csv(
                     joined=int(row[2]),
                     is_active=bool(int(row[3])),
                 )
-                if member.is_active:
-                    members.current.add(member)
-                else:
-                    members.archive.add(member)
+                members.append(member)
     except FileNotFoundError:
         print(f"error getting file from {PATH.format(club_url_name)}")
     return members

@@ -12,7 +12,7 @@ def get_session(configs: Configs):
 
 
 # this allows for seamless transition from csv to database
-def get_existing_members(club_url_name: str):
+def get_existing_members(club_url_name: str) -> list[Member]:
     return get_existing_members_from_csv(club_url_name)
 
 
