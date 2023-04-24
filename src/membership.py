@@ -20,21 +20,18 @@ from .structures import (
 
 class RecordMembersForTracking(RecordMembers):
     def to_cur(self, member: Member):
-        assert not (member in self.current or member in self.archive)
         member.is_active = True
         self.current.add(member)
 
     def cur_to_arc(self, member: Member):
-        assert member in self.current and member not in self.archive
         member.is_active = False
         self.archive.add(member)
-        self.current.remove(member)
+        self.current.discard(member)
 
     def arc_to_cur(self, member: Member):
-        assert member not in self.current and member in self.archive
         member.is_active = True
         self.current.add(member)
-        self.archive.remove(member)
+        self.archive.discard(member)
 
     def nothing(self, member: Member):
         pass

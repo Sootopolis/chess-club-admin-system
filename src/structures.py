@@ -233,9 +233,7 @@ class Member(_Player):
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, Member):
-            raise TypeError(
-                "cannot compare a `Member` object with something else"
-            )
+            raise TypeError("cannot compare a `Member` with something else")
         # not using `is not None` for backwards compatibility!
         if self.joined and __value.joined and self.joined != __value.joined:
             return False
@@ -249,16 +247,12 @@ class Member(_Player):
 
     def __lt__(self, __value: object) -> bool:
         if not isinstance(__value, Member):
-            raise TypeError(
-                "cannot compare a `Member` object with something else"
-            )
+            raise TypeError("cannot compare a `Member` with something else")
         return self.username < __value.username
 
     def __gt__(self, __value: object) -> bool:
         if not isinstance(__value, Member):
-            raise TypeError(
-                "cannot compare a `Member` object with something else"
-            )
+            raise TypeError("cannot compare a `Member` with something else")
         return self.username > __value.username
 
     def __hash__(self) -> int:
