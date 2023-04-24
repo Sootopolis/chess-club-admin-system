@@ -91,7 +91,7 @@ class ChangeManager:
     def _print_changes(changes: _Changes | _RenamedChanges):
         ChangeManager._sort_members(changes)
         if len(changes.members) > 0:
-            print(changes.name)
+            print(changes.name + ":")
             if isinstance(changes, _Changes):
                 for member in changes.members:
                     print(member.username, member.url)
