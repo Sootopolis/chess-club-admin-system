@@ -25,13 +25,13 @@ class RecordMembersForTracking(RecordMembers):
         self.current.add(member)
 
     def cur_to_arc(self, member: Member):
-        assert member in self.current and member in self.archive
+        assert member in self.current and member not in self.archive
         member.is_active = False
         self.archive.add(member)
         self.current.remove(member)
 
     def arc_to_cur(self, member: Member):
-        assert member in self.current and member in self.archive
+        assert member not in self.current and member in self.archive
         member.is_active = True
         self.current.add(member)
         self.archive.remove(member)
@@ -247,9 +247,7 @@ def membership(
     club_name: Optional[str] = None, readonly: bool = False
 ) -> None:
     configs = Configs.get_configs(club_name)
-    record = RecordMembersForTracking(
-        get_existing_members(configs.club.url_name)
-    )
+    record = RecordMembersForTracking(get_existing_members(configs.club_name))
     compare_membership(configs.session, configs.club, record)
     if not readonly:
-        updated_members_data(configs.club.url_name, record)
+        updated_members_data(configs.club_name, record)
