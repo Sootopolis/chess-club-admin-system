@@ -1,15 +1,17 @@
 import csv
 import os
 
-from .structures import ExistingMembers, Member
+from .structures import RecordMembers, RecordMembersForTracking, Member
 
 DIR = "CSV_files/{}"
 PATH = f"{DIR}/members.csv"
 HEADER = ("username", "player_id", "joined", "is_active")
 
 
-def get_existing_members_from_csv(club_url_name: str) -> ExistingMembers:
-    members = ExistingMembers()
+def get_existing_members_from_csv(
+    club_url_name: str,
+) -> RecordMembersForTracking:
+    members = RecordMembersForTracking()
     try:
         with open(PATH.format(club_url_name)) as stream:
             reader = csv.reader(stream)
@@ -30,7 +32,8 @@ def get_existing_members_from_csv(club_url_name: str) -> ExistingMembers:
     return members
 
 
-def update_members_csv(club_name: str, members: list[Member]) -> None:
+def update_members_csv(club_name: str, record: RecordMembers) -> None:
+    members = sorted(record.all, key=lambda x: (not x.is_active, x.username))
     dir = DIR.format(club_name)
     if not os.path.exists(dir):
         os.makedirs(dir)

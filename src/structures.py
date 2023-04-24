@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
+from enum import Enum, auto
 import dataclass_wizard as dw
 import requests
-from typing import Optional
+from typing import Iterable, Optional
 import yaml
 
 
@@ -65,7 +66,7 @@ class _Player(dw.JSONWizard):
 
     @property
     def api(self) -> str:
-        return f"https://api.chess.com/pub/member/{self.username}"
+        return f"https://api.chess.com/pub/player/{self.username}"
 
     def update_player_id(self, session: requests.Session) -> None:
         if self.player_id is None:
@@ -74,7 +75,7 @@ class _Player(dw.JSONWizard):
 
     @property
     def url(self) -> str:
-        return f"https://www.chess.com/player/{self.username}"
+        return f"https://www.chess.com/member/{self.username}"
 
     @property
     def api_clubs(self) -> str:
@@ -378,84 +379,167 @@ class Configs(dw.JSONWizard):
 
 @dataclass
 class _AllClubConfigs(dw.JSONWizard):
-    default_club: str
-    club_configs: dict[str, Configs]
+    default_club: str = field(metadata=_remap("default_club"))
+    club_configs: dict[str, Configs] = field(metadata=_remap("club_configs"))
 
 
 # data structures for local handling
 
 
-@dataclass
-class ExistingMembers:
-    current: set[Member] = field(default_factory=set, init=False)
-    archive: set[Member] = field(default_factory=set, init=False)
+class RecordMembers:
+    def __init__(self, members: Optional[Iterable[Member]] = None) -> None:
+        self.current: set[Member] = set()
+        self.archive: set[Member] = set()
+        if members:
+            for member in members:
+                if member.is_active:
+                    self.current.add(member)
+                else:
+                    self.archive.add(member)
+
+    @property
+    def all(self) -> set[Member]:
+        return self.current | self.archive
+
+
+class RecordMembersForTracking(RecordMembers):
+    def to_cur(self, member: Member):
+        assert not (member in self.current or member in self.archive)
+        member.is_active = True
+        self.current.add(member)
+
+    def cur_to_arc(self, member: Member):
+        assert member in self.current and member in self.archive
+        member.is_active = False
+        self.archive.add(member)
+        self.current.remove(member)
+
+    def arc_to_cur(self, member: Member):
+        assert member in self.current and member in self.archive
+        member.is_active = True
+        self.current.add(member)
+        self.archive.remove(member)
+
+    def nothing(self, member: Member):
+        pass
+
+
+class _Move(Enum):
+    JOINED = auto()
+    ARCHIVED = auto()
+    RETURNED = auto()
+    NOTHING = auto()
 
 
 @dataclass
-class MembershipChanges:
-    left: list[Member] = field(default_factory=list, init=False)
-    joined: list[Member] = field(default_factory=list, init=False)
-    closed: list[Member] = field(default_factory=list, init=False)
-    reopened: list[Member] = field(default_factory=list, init=False)
-    returned: list[Member] = field(default_factory=list, init=False)
-    renamed: list[tuple[Member, Member]] = field(
+class _BaseChangeCategory:
+    name: str
+    move_method: _Move = _Move.NOTHING
+
+
+@dataclass
+class _Changes(_BaseChangeCategory):
+    members: list[Member] = field(default_factory=list, init=False)
+
+    def add_member(self, member: Member):
+        self.members.append(member)
+
+
+@dataclass
+class _RenamedChanges(_BaseChangeCategory):
+    members: list[tuple[Member, Member]] = field(
         default_factory=list, init=False
     )
-    renamed_gone: list[Member] = field(default_factory=list, init=False)
-    renamed_returned: list[tuple[Member, Member]] = field(
-        default_factory=list, init=False
-    )
+
+    def add_pair(self, old: Member, new: Member):
+        self.members.append((old, new))
+
+
+class ChangeManager:
+    left = _Changes("goners", _Move.ARCHIVED)
+    joined = _Changes("newbies", _Move.JOINED)
+    closed = _Changes("closed", _Move.ARCHIVED)
+    reopened = _Changes("reopened", _Move.RETURNED)
+    returned = _Changes("returned", _Move.RETURNED)
+    renamed = _RenamedChanges("renamed")
+    # we don't know the new name!
+    renamed_gone = _Changes("renamed & gone", _Move.ARCHIVED)
+    renamed_reopened = _RenamedChanges("reopened & renamed", _Move.RETURNED)
+    renamed_returned = _RenamedChanges("renamed & returned", _Move.RETURNED)
 
     @staticmethod
-    def __print_member(title: str, member_list: list[Member]) -> None:
-        if member_list:
-            print(title)
-            for member in sorted(member_list, key=lambda x: x.username):
+    def _sort_members(changes: _Changes | _RenamedChanges):
+        if isinstance(changes, _Changes):
+            changes.members.sort(key=lambda x: x.username)
+        else:
+            changes.members.sort(key=lambda x: x[1].username)
+
+    @staticmethod
+    def _print_changes(changes: _Changes | _RenamedChanges):
+        ChangeManager._sort_members(changes)
+        if isinstance(changes, _Changes):
+            for member in changes.members:
                 print(member.username, member.url)
+        else:
+            for old, new in changes.members:
+                print(old.username, "->", new.username, new.url)
 
     @staticmethod
-    def __print_renamed(
-        title: str, member_list: list[tuple[Member, Member]]
+    def _update_members(changes: _RenamedChanges):
+        for old, new in changes.members:
+            old.username = new.username
+            old.joined = new.joined
+
+    @staticmethod
+    def _get_members(changes: _Changes | _RenamedChanges):
+        if isinstance(changes, _Changes):
+            return changes.members
+        else:
+            ChangeManager._update_members(changes)
+            return list(map(lambda x: x[0], changes.members))
+
+    @staticmethod
+    def _move_members(
+        record: RecordMembersForTracking, changes: _Changes | _RenamedChanges
+    ):
+        members = ChangeManager._get_members(changes)
+        match changes.move_method:
+            case _Move.JOINED:
+                for member in members:
+                    record.to_cur(member)
+            case _Move.ARCHIVED:
+                for member in members:
+                    record.cur_to_arc(member)
+            case _Move.RETURNED:
+                for member in members:
+                    record.arc_to_cur(member)
+            case _Move.NOTHING:
+                for member in members:
+                    record.nothing(member)
+
+    @staticmethod
+    def _summarise_changes(
+        record: RecordMembersForTracking, changes: _Changes | _RenamedChanges
+    ):
+        ChangeManager._print_changes(changes)
+        ChangeManager._move_members(record, changes)
+
+    def summarise(
+        self,
+        record: RecordMembersForTracking,
     ) -> None:
-        if member_list:
-            print(title)
-            for member_old, member_new in sorted(
-                member_list, key=lambda x: x[1].username
-            ):
-                print(
-                    member_old.username,
-                    "->",
-                    member_new.username,
-                    member_new.url,
-                )
-
-    def __print_changes(self) -> None:
-        self.__print_member("goners:", self.left)
-        self.__print_member("newbies:", self.joined)
-        self.__print_member("closed:", self.closed)
-        self.__print_member("reopened:", self.reopened)
-        self.__print_member("returned:", self.returned)
-        self.__print_renamed("renamed:", self.renamed)
-        self.__print_member("renamed and gone:", self.renamed_gone)
-        self.__print_renamed("renamed and returned:", self.renamed_returned)
-
-    def summarise(self, existing: ExistingMembers) -> None:
-        self.__print_changes()
-        for member in self.left:
-            member.is_active = False
-            existing.archive.add(member)
-            existing.current.remove(member)
-        for member in self.joined:
-            existing.current.add(member)
-        for member in self.closed:
-            member.is_active = False
-        for member in self.reopened:
-            member.is_active = True
-        for member_old, member_new in self.renamed:
-            member_old.username = member_new.username
-        for member in self.renamed_gone:
-            member.is_active = False
-        for member_old, member_new in self.renamed_returned:
-            member_old.username = member_new.username
-            member_old.is_active = True
-        print(f"total: {len(existing.current)}")
+        map(
+            lambda x: ChangeManager._summarise_changes(record, x),
+            (
+                self.left,
+                self.joined,
+                self.closed,
+                self.reopened,
+                self.returned,
+                self.renamed,
+                self.renamed_gone,
+                self.renamed_reopened,
+                self.renamed_returned,
+            ),
+        )
+        print(f"total: {len(record.current)}")
