@@ -93,12 +93,14 @@ class ChangeManager:
     @staticmethod
     def _print_changes(changes: _Changes | _RenamedChanges):
         ChangeManager._sort_members(changes)
-        if isinstance(changes, _Changes):
-            for member in changes.members:
-                print(member.username, member.url)
-        else:
-            for old, new in changes.members:
-                print(old.username, "->", new.username, new.url)
+        if len(changes.members) > 0:
+            print(changes.name)
+            if isinstance(changes, _Changes):
+                for member in changes.members:
+                    print(member.username, member.url)
+            else:
+                for old, new in changes.members:
+                    print(old.username, "->", new.username, new.url)
 
     @staticmethod
     def _update_members(changes: _RenamedChanges):
@@ -144,20 +146,18 @@ class ChangeManager:
         self,
         record: RecordMembersForTracking,
     ) -> None:
-        map(
-            lambda x: ChangeManager._summarise_changes(record, x),
-            (
-                self.left,
-                self.joined,
-                self.closed,
-                self.reopened,
-                self.returned,
-                self.renamed,
-                self.renamed_gone,
-                self.renamed_reopened,
-                self.renamed_returned,
-            ),
-        )
+        for changes in (
+            self.left,
+            self.joined,
+            self.closed,
+            self.reopened,
+            self.returned,
+            self.renamed,
+            self.renamed_gone,
+            self.renamed_reopened,
+            self.renamed_returned,
+        ):
+            ChangeManager._summarise_changes(record, changes)
         print(f"total: {len(record.current)}")
 
 
