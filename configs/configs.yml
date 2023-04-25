@@ -1,9 +1,8 @@
+email: yuzhuo.w@gmail.com
+username: Wallace_Wang
 default_club: the-great-british-empire
 club_configs:
-    tgbe-office-for-planning-and-preparation:
-        email: yuzhuo.w@gmail.com
-        username: Wallace_Wang
-        club: tgbe-office-for-planning-and-preparation
+    the-great-british-empire:
         recruitment:
             avoid_admins: true
             invited_expiry: 180
@@ -19,10 +18,7 @@ club_configs:
             max_clubs: 35
             max_hrs_per_move: 18
             max_hrs_offline: 48
-    the-great-british-empire:
-        email: yuzhuo.w@gmail.com
-        username: Wallace_Wang
-        club: the-great-british-empire
+    tgbe-office-for-planning-and-preparation:
         recruitment:
             avoid_admins: true
             invited_expiry: 180
@@ -39,9 +35,6 @@ club_configs:
             max_hrs_per_move: 18
             max_hrs_offline: 48
     devon-chess:
-        email: yuzhuo.w@gmail.com
-        username: Wallace_Wang
-        club: devon-chess
         recruitment:
             avoid_admins: true
             invited_expiry: 180

@@ -1,6 +1,6 @@
 import click
 
-from .membership import membership
+from .commands.membership import membership
 
 
 @click.group()
