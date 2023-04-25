@@ -231,32 +231,37 @@ class Member(_Player):
     joined: Optional[int] = None
     is_active: bool = field(default=True)
 
+    def __hash__(self) -> int:
+        return hash(self.username)
+
     def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, Member):
-            raise TypeError("cannot compare a `Member` with something else")
+        if not isinstance(__value, _Player):
+            raise TypeError("cannot compare `Member` with non `_Player`")
         # not using `is not None` for backwards compatibility!
-        if self.joined and __value.joined and self.joined != __value.joined:
-            return False
-        if (
-            self.player_id
-            and __value.player_id
-            and self.player_id != __value.player_id
-        ):
-            return False
+        if isinstance(__value, Member):
+            if (
+                self.joined
+                and __value.joined
+                and self.joined != __value.joined
+            ):
+                return False
+            if (
+                self.player_id
+                and __value.player_id
+                and self.player_id != __value.player_id
+            ):
+                return False
         return self.username == __value.username
 
     def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, Member):
-            raise TypeError("cannot compare a `Member` with something else")
+        if not isinstance(__value, _Player):
+            raise TypeError("cannot compare a `Member` with non `_Player`")
         return self.username < __value.username
 
     def __gt__(self, __value: object) -> bool:
-        if not isinstance(__value, Member):
-            raise TypeError("cannot compare a `Member` with something else")
+        if not isinstance(__value, _Player):
+            raise TypeError("cannot compare a `Member` with non `_Player`")
         return self.username > __value.username
-
-    def __hash__(self) -> int:
-        return hash(self.username)
 
 
 @dataclass
