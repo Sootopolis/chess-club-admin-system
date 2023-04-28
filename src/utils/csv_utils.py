@@ -1,7 +1,7 @@
 import csv
 import os
 
-from .structures import Member, RecordMembers
+from .structures import Member, MemberRecords
 
 
 DIR = "CSV_files/{}"
@@ -24,13 +24,14 @@ def get_existing_members_from_csv(
                     joined=int(row[2]),
                     is_active=bool(int(row[3])),
                 )
-                members.append(member)
+                if member.username and member.player_id and member.joined:
+                    members.append(member)
     except FileNotFoundError:
         print(f"error getting file from {PATH.format(club_url_name)}")
     return members
 
 
-def update_members_csv(club_name: str, record: RecordMembers) -> None:
+def update_members_csv(club_name: str, record: MemberRecords) -> None:
     members = sorted(record.all, key=lambda x: (not x.is_active, x.username))
     dir = DIR.format(club_name)
     if not os.path.exists(dir):

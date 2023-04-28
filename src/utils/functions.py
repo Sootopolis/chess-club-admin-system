@@ -1,14 +1,7 @@
 from typing import Iterable
 
-import requests
-from .structures import ClubConfig, Member, RecordMembers
+from .structures import Member, MemberRecords
 from .csv_utils import get_existing_members_from_csv, update_members_csv
-
-
-def get_session(configs: ClubConfig):
-    session = requests.session()
-    session.headers.update(configs.http_header)
-    return session
 
 
 # this allows for seamless transition from csv to database
@@ -17,7 +10,7 @@ def get_existing_members(club_url_name: str) -> list[Member]:
 
 
 # this allows for seamless transition from csv to database
-def updated_members_data(club_url_name: str, record: RecordMembers):
+def updated_members_data(club_url_name: str, record: MemberRecords):
     return update_members_csv(club_url_name, record)
 
 

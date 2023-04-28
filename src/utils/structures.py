@@ -1,11 +1,15 @@
 from dataclasses import dataclass, field
 import dataclass_wizard as dw
 import requests
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 import yaml
 
 
 # helper functions
+
+
+def equal_if_truthy(a: Any, b: Any) -> bool:
+    return not a or not b or a == b
 
 
 def _remap(*keys: str) -> dict[str, dw.models.JSON]:
@@ -13,7 +17,7 @@ def _remap(*keys: str) -> dict[str, dw.models.JSON]:
     `keys` are possible names you want mapped into the attribute.
     by default, camel cases are mapped into snake cases."""
 
-    return {"__remapping__": dw.json_key(*keys)}
+    return {"__remapping__": dw.json_key(*keys, all=True)}
 
 
 def _get_data(session: requests.Session, url: str, timeout: int = 5):
@@ -61,7 +65,9 @@ class _PlayerStats(dw.JSONWizard):
 @dataclass
 class _Player(dw.JSONWizard):
     username: str
-    player_id: Optional[int] = None
+    player_id: Optional[int] = field(
+        default=None, metadata=_remap("player_id")
+    )
 
     @property
     def api(self) -> str:
@@ -112,8 +118,8 @@ class _ClubMembers(dw.JSONWizard):
     all_time: list["Member"]
 
     @property
-    def all(self) -> set["Member"]:
-        return set(self.weekly + self.monthly + self.all_time)
+    def all(self) -> list["Member"]:
+        return self.weekly + self.monthly + self.all_time
 
 
 @dataclass
@@ -224,7 +230,7 @@ class Match(dw.JSONWizard):
 @dataclass
 class Member(_Player):
     joined: Optional[int] = None
-    is_active: bool = field(default=True)
+    is_active: bool = field(default=True, metadata=_remap("is_active"))
 
     def __hash__(self) -> int:
         return hash(self.username)
@@ -234,16 +240,9 @@ class Member(_Player):
             raise TypeError("cannot compare `Member` with non `_Player`")
         # not using `is not None` for backwards compatibility!
         if isinstance(__value, Member):
-            if (
-                self.joined
-                and __value.joined
-                and self.joined != __value.joined
-            ):
-                return False
-            if (
-                self.player_id
-                and __value.player_id
-                and self.player_id != __value.player_id
+            if not (
+                equal_if_truthy(self.joined, __value.joined)
+                and equal_if_truthy(self.player_id, __value.player_id)
             ):
                 return False
         return self.username == __value.username
@@ -287,7 +286,7 @@ class Club(dw.JSONWizard):
     def api_members(self) -> str:
         return f"{self.api}/members"
 
-    def get_members(self, session: requests.Session) -> set[Member]:
+    def get_members(self, session: requests.Session) -> list[Member]:
         """returns list of club members"""
         data = _get_data(session, self.api_members)
         return _ClubMembers.from_dict(data).all
@@ -403,3 +402,55 @@ class RecordMembers:
     @property
     def all(self) -> set[Member]:
         return self.current | self.archive
+
+    def update(
+        self,
+        members: Iterable[Member],
+        is_active: Optional[bool] = None,
+    ) -> None:
+        if is_active is None:
+            return
+        if is_active:
+            for member in members:
+                self.current.update(members)
+                self.archive.difference_update(members)
+                member.is_active = is_active
+        else:
+            for member in members:
+                self.archive.update(members)
+                self.archive.difference_update(members)
+                member.is_active = is_active
+
+
+class MemberRecords:
+    def __init__(self, members: Optional[Iterable[Member]]) -> None:
+        self.current: dict[int, Member] = {}
+        self.archive: dict[int, Member] = {}
+        if members:
+            for member in members:
+                assert member.player_id
+                if member.is_active:
+                    self.current[member.player_id] = member
+                else:
+                    self.archive[member.player_id] = member
+
+    def update(self, members: Iterable[Member], is_active: bool) -> None:
+        if is_active:
+            src_dict = self.archive
+            dst_dict = self.current
+        else:
+            src_dict = self.current
+            dst_dict = self.archive
+        for member in members:
+            assert member.player_id
+            member.is_active = is_active
+            if member.player_id in src_dict:
+                del src_dict[member.player_id]
+            dst_dict[member.player_id] = member
+
+    @property
+    def all(self) -> list[Member]:
+        return sorted(
+            list(self.current.values()) + list(self.archive.values()),
+            key=lambda x: (not x.is_active, x.username),
+        )
