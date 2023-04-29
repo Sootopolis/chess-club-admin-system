@@ -388,40 +388,6 @@ class Configs(dw.JSONWizard):
 # data structures for local handling
 
 
-class RecordMembers:
-    def __init__(self, members: Optional[Iterable[Member]] = None) -> None:
-        self.current: set[Member] = set()
-        self.archive: set[Member] = set()
-        if members:
-            for member in members:
-                if member.is_active:
-                    self.current.add(member)
-                else:
-                    self.archive.add(member)
-
-    @property
-    def all(self) -> set[Member]:
-        return self.current | self.archive
-
-    def update(
-        self,
-        members: Iterable[Member],
-        is_active: Optional[bool] = None,
-    ) -> None:
-        if is_active is None:
-            return
-        if is_active:
-            for member in members:
-                self.current.update(members)
-                self.archive.difference_update(members)
-                member.is_active = is_active
-        else:
-            for member in members:
-                self.archive.update(members)
-                self.archive.difference_update(members)
-                member.is_active = is_active
-
-
 class MemberRecords:
     def __init__(self, members: Optional[Iterable[Member]]) -> None:
         self.current: dict[int, Member] = {}
@@ -435,12 +401,9 @@ class MemberRecords:
                     self.archive[member.player_id] = member
 
     def update(self, members: Iterable[Member], is_active: bool) -> None:
-        if is_active:
-            src_dict = self.archive
-            dst_dict = self.current
-        else:
-            src_dict = self.current
-            dst_dict = self.archive
+        (src_dict, dst_dict) = (self.archive, self.current)[
+            :: 1 if is_active else -1
+        ]
         for member in members:
             assert member.player_id
             member.is_active = is_active

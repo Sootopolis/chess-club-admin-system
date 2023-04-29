@@ -46,7 +46,7 @@ class _Changes(_BaseChangeCategory):
 
 
 @dataclass
-class _RenamedChanges(_BaseChangeCategory):
+class _Returners(_BaseChangeCategory):
     pairs: list[tuple[Member, Member]] = field(default_factory=list)
 
     def add_pair(self, old: Member, new: Member) -> None:
@@ -59,12 +59,15 @@ class _RenamedChanges(_BaseChangeCategory):
         if self.pairs:
             print(f"{self.name} ({len(self.pairs)}):")
             for old, new in self.pairs:
-                print(old.username, "->", new.username, new.url)
+                if old.username != new.username:
+                    print(old.username, "->", new.username, new.url)
+                else:
+                    print(old.username, old.url)
 
     def _update_members(self) -> None:
         for old, new in self.pairs:
             old.username = new.username
-            old.player_id = new.player_id
+            old.joined = new.joined
 
     def get_members(self) -> list[Member]:
         self._update_members()
@@ -74,26 +77,27 @@ class _RenamedChanges(_BaseChangeCategory):
 class _ChangeManager:
     def __init__(self) -> None:
         self.left = _Changes("goners", False)
-        self.joined = _Changes("newbies", True)
         self.closed = _Changes("closed", False)
-        self.reopened = _Changes("reopened", False)
-        self.returned = _Changes("returned", True)
-        self.renamed = _RenamedChanges("renamed", None)
+        self.joined = _Changes("newbies", True)
+        self.reopened = _Changes("reopened", True)
+        self.returned = _Returners("returned", True)
+        self.renamed = _Returners("renamed", None)
         # we don't know the new name!
         self.renamed_gone = _Changes("renamed & gone", False)
-        self.renamed_reopened = _RenamedChanges("reopened & renamed", True)
-        self.renamed_returned = _RenamedChanges("renamed & returned", True)
+        self.renamed_reopened = _Returners("reopened & renamed", True)
+        self.renamed_returned = _Returners("renamed & returned", True)
 
     @staticmethod
     def _update_records(
-        record: MemberRecords, changes: _Changes | _RenamedChanges
+        record: MemberRecords, changes: _Changes | _Returners
     ) -> None:
+        members: list[Member] = changes.get_members()
         if changes.active is not None:
-            record.update(changes.get_members(), changes.active)
+            record.update(members, changes.active)
 
     @staticmethod
     def _summarise_changes(
-        record: MemberRecords, changes: _Changes | _RenamedChanges
+        record: MemberRecords, changes: _Changes | _Returners
     ) -> None:
         changes.sort_members()
         changes.print_changes()
@@ -145,16 +149,16 @@ def _compare(
         # check if the member is still here by player_id
         if old_id in additions_by_id:
             # the member is still here, username or join time or both changed
-            new_id = additions_by_id[old_id]
+            new = additions_by_id[old_id]
             # if username is the same, member left and rejoined
-            if old.username == new_id.username:
-                change_manager.returned.add_member(old)
+            if old.username == new.username:
+                change_manager.returned.add_pair(old, new)
             # is joined time is the same, member changed username
-            elif old.joined == new_id.joined:
-                change_manager.renamed.add_pair(old, new_id)
+            elif old.joined == new.joined:
+                change_manager.renamed.add_pair(old, new)
             # else both happened
             else:
-                change_manager.renamed_returned.add_pair(old, new_id)
+                change_manager.renamed_returned.add_pair(old, new)
             del additions_by_id[old_id]
         else:
             # the member is gone
@@ -186,7 +190,7 @@ def _compare(
                 if old.joined == new.joined:
                     change_manager.reopened.add_member(old)
                 else:
-                    change_manager.returned.add_member(old)
+                    change_manager.returned.add_pair(old, new)
             else:
                 if old.joined == new.joined:
                     change_manager.renamed_reopened.add_pair(old, new)
