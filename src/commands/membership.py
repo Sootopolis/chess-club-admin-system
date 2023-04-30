@@ -217,6 +217,26 @@ def _compare_and_update(
         updated_members_data(club_name, record)
 
 
+def _get_club_names(
+    configs: Configs,
+    club_name: Optional[str] = None,
+    all_clubs: bool = False,
+    readonly: bool = False,
+):
+    if all_clubs:
+        print(
+            "checking membership changes"
+            + (" without updating records" if readonly else "")
+            + " for the following club(s):"
+        )
+        print(*configs.all_club_names, sep=", ")
+        return configs.all_club_names
+    elif club_name:
+        return [club_name]
+    else:
+        return [configs.default_club_name]
+
+
 @click.command()
 @click.option("--club-name", "-c")
 @click.option("--all-clubs", "-a", is_flag=True, default=False)
@@ -231,25 +251,11 @@ def membership(
         raise SystemExit(message)
 
     configs = Configs.from_yaml()
-    session = configs.session
 
-    club_names: list[str] = []
-    if all_clubs:
-        club_names += configs.all_club_names
-        print(
-            "checking membership changes"
-            + (" without updating records" if readonly else "")
-            + " for the following club(s):"
-        )
-        print(*club_names, sep=", ")
-    else:
-        if club_name:
-            club_names.append(club_name)
-        elif configs.default_club_name:
-            club_names.append(configs.default_club_name)
+    club_names = _get_club_names(configs, club_name, all_clubs, readonly)
 
     if club_names:
-        for club_name in club_names:
-            _compare_and_update(session, club_name, readonly)
+        for name in club_names:
+            _compare_and_update(configs.session, name, readonly)
     else:
         print("no club found in configs")
