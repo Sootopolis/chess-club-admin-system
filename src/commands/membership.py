@@ -5,7 +5,7 @@ import click
 import requests
 
 from ..utils.functions import (
-    get_existing_members,
+    get_member_records,
     get_player_id_map,
     updated_members_data,
 )
@@ -211,7 +211,7 @@ def _compare_and_update(
         + (" without updating record" if readonly else "")
         + f" for {club_name}"
     )
-    record = MemberRecords(get_existing_members(club_name))
+    record = get_member_records(club_name)
     _compare(session, club_name, record)
     if not readonly:
         updated_members_data(club_name, record)

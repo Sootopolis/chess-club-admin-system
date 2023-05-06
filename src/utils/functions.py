@@ -5,13 +5,17 @@ from .csv_utils import get_existing_members_from_csv, update_members_csv
 
 
 # this allows for seamless transition from csv to database
-def get_existing_members(club_url_name: str) -> list[Member]:
-    return get_existing_members_from_csv(club_url_name)
+def get_existing_members(club_name: str) -> list[Member]:
+    return get_existing_members_from_csv(club_name)
+
+
+def get_member_records(club_name: str) -> MemberRecords:
+    return MemberRecords(get_existing_members(club_name))
 
 
 # this allows for seamless transition from csv to database
-def updated_members_data(club_url_name: str, record: MemberRecords):
-    return update_members_csv(club_url_name, record)
+def updated_members_data(club_name: str, record: MemberRecords):
+    return update_members_csv(club_name, record)
 
 
 def get_player_id_map(members: Iterable[Member]) -> dict[int, Member]:
