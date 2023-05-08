@@ -401,9 +401,10 @@ class MemberRecords:
                     self.archive[member.player_id] = member
 
     def update(self, members: Iterable[Member], is_active: bool) -> None:
-        (src_dict, dst_dict) = (self.archive, self.current)[
-            :: 1 if is_active else -1
-        ]
+        if is_active:
+            src_dict, dst_dict = self.archive, self.current
+        else:
+            src_dict, dst_dict = self.current, self.archive
         for member in members:
             assert member.player_id
             member.is_active = is_active
