@@ -414,7 +414,4 @@ class MemberRecords:
 
     @property
     def all(self) -> list[Member]:
-        return sorted(
-            list(self.current.values()) + list(self.archive.values()),
-            key=lambda x: (not x.is_active, x.username),
-        )
+        return sorted(self.current.values()) + sorted(self.archive.values())
