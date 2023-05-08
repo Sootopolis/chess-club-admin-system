@@ -9,12 +9,10 @@ PATH = f"{DIR}/members.csv"
 HEADER = ("username", "player_id", "joined", "is_active")
 
 
-def get_existing_members_from_csv(
-    club_url_name: str,
-) -> list[Member]:
+def get_existing_members_from_csv(club_name: str) -> list[Member]:
     members: list[Member] = []
     try:
-        with open(PATH.format(club_url_name)) as stream:
+        with open(PATH.format(club_name)) as stream:
             reader = csv.reader(stream)
             next(reader)
             for row in reader:
@@ -27,7 +25,7 @@ def get_existing_members_from_csv(
                 if member.username and member.player_id and member.joined:
                     members.append(member)
     except FileNotFoundError:
-        print(f"error getting file from {PATH.format(club_url_name)}")
+        print(f"error getting file from {PATH.format(club_name)}")
     return members
 
 
