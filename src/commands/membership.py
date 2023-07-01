@@ -7,6 +7,7 @@ import requests
 from ..utils.functions import (
     get_member_records,
     get_player_id_map,
+    get_username_map,
     updated_members_data,
 )
 
@@ -119,18 +120,32 @@ class _ChangeManager:
         print(f"total: {len(record.current)}")
 
 
-def _get_id_maps(
+def _get_add_del_id_maps(
     session: requests.Session, club: Club, record: MemberRecords
 ) -> tuple[dict[int, Member], dict[int, Member]]:
-    existing_set = set(record.current.values())
-    incoming_set = set(club.get_members(session))
-    additions_set = incoming_set.difference(existing_set)
-    deletions_set = existing_set.difference(incoming_set)
-    for member in additions_set:
+    existing_by_username = get_username_map(record.current.values())
+    incoming_by_username = get_username_map(club.get_members(session))
+    print("got existing and incoming by username")
+    additions: list[Member] = []
+    deletions: list[Member] = []
+    for username in incoming_by_username.keys() | existing_by_username.keys():
+        if username not in existing_by_username:
+            additions.append(incoming_by_username[username])
+        elif username not in incoming_by_username:
+            deletions.append(existing_by_username[username])
+        elif (
+            incoming_by_username[username].joined
+            != existing_by_username[username].joined
+        ):
+            additions.append(incoming_by_username[username])
+            deletions.append(existing_by_username[username])
+    print(f"got additions ({len(additions)}) and deletions ({len(deletions)})")
+    for member in additions:
         member.update_player_id(session)
-    additions_by_id = get_player_id_map(additions_set)
-    deletions_by_id = get_player_id_map(deletions_set)
-    return additions_by_id, deletions_by_id
+    print("updated player ids for additions")
+    additions_by_id = get_player_id_map(additions)
+    deletions_by_id = get_player_id_map(deletions)
+    return (additions_by_id, deletions_by_id)
 
 
 def _compare(
@@ -141,7 +156,11 @@ def _compare(
 
     club = Club.from_str(session, club_name)
     change_manager = _ChangeManager()
-    additions_by_id, deletions_by_id = _get_id_maps(session, club, record)
+    print("about to get id maps")
+    additions_by_id, deletions_by_id = _get_add_del_id_maps(
+        session, club, record
+    )
+    print("got id maps")
 
     # examining old names that disappeared
     for old_id in deletions_by_id:
