@@ -232,6 +232,11 @@ def _get_club_names(
         print(*configs.all_club_names, sep=", ")
         return configs.all_club_names
     elif club_name:
+        if club_name not in configs.all_club_names:
+            raise SystemExit(
+                f'club "{club_name}" is not in `configs.yml` - '
+                "use `ccas config add-club` to add the club."
+            )
         return [club_name]
     else:
         return [configs.default_club_name]

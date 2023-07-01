@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
+from typing import Any, Iterable, Optional
+
 import dataclass_wizard as dw
 import requests
-from typing import Any, Iterable, Optional
 import yaml
-
 
 # helper functions
 

@@ -1,7 +1,8 @@
+import re
 from typing import Iterable
 
-from .structures import Member, MemberRecords
 from .csv_utils import get_existing_members_from_csv, update_members_csv
+from .structures import Member, MemberRecords
 
 
 # this allows for seamless transition from csv to database
@@ -24,3 +25,11 @@ def get_player_id_map(members: Iterable[Member]) -> dict[int, Member]:
         if member.player_id:
             player_id_map[member.player_id] = member
     return player_id_map
+
+
+def validate_email(email: str) -> bool:
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    if re.match(pattern, email):
+        return True
+    else:
+        return False
