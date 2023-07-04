@@ -242,10 +242,6 @@ def _get_club_names(
         return [configs.default_club_name]
 
 
-@click.command()
-@click.option("--club-name", "-c")
-@click.option("--all-clubs", "-a", is_flag=True, default=False)
-@click.option("--readonly", "-r", is_flag=True, default=False)
 def membership(
     club_name: Optional[str] = None,
     all_clubs: bool = False,
@@ -264,3 +260,15 @@ def membership(
             _compare_and_update(configs.session, name, readonly)
     else:
         print("no club found in configs")
+
+
+@click.command(name="membership")
+@click.option("--club", "-c", "club_name", type=str)
+@click.option("--all-clubs", "-a", is_flag=True)
+@click.option("--readonly", "-r", is_flag=True)
+def membership_command(
+    club_name: Optional[str] = None,
+    all_clubs: bool = False,
+    readonly: bool = False,
+):
+    membership(club_name, all_clubs, readonly)

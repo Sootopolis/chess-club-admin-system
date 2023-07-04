@@ -42,3 +42,7 @@ def update_members_csv(club_name: str, record: MemberRecords) -> None:
             joined = str(member.joined) if member.joined else "0"
             is_active = "1" if member.is_active else "0"
             writer.writerow((username, player_id, joined, is_active))
+
+
+def get_candidate_record_from_csv(club_name: str):
+    pass

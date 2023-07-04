@@ -1,8 +1,8 @@
 import re
-from typing import Iterable
+from typing import Iterable, Optional
 
 from .csv_utils import get_existing_members_from_csv, update_members_csv
-from .structures import Member, MemberRecords
+from .structures import Configs, Member, MemberRecords
 
 
 # this allows for seamless transition from csv to database
@@ -33,3 +33,17 @@ def validate_email(email: str) -> bool:
         return True
     else:
         return False
+
+
+def get_club_name(configs: Configs, club_name: Optional[str] = None) -> str:
+    if club_name:
+        if club_name not in configs.all_club_names:
+            raise SystemExit(
+                f'"{club_name}" is not in `configs.yml` - '
+                "use `ccas config add-club` to add the club."
+            )
+        return club_name
+    elif configs.default_club_name:
+        return configs.default_club_name
+    else:
+        raise SystemExit("no club configured")

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import StrEnum, auto
 from typing import Any, Iterable, Optional
 
 import dataclass_wizard as dw
@@ -256,6 +257,15 @@ class Member(_Player):
         if not isinstance(__value, _Player):
             raise TypeError("cannot compare a `Member` with non `_Player`")
         return self.username > __value.username
+
+
+class CandidateStatus(StrEnum):
+    INVITED = auto()
+
+
+@dataclass
+class Candidate(_Player):
+    status: str = ""
 
 
 @dataclass
