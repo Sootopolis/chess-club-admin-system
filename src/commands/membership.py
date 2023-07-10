@@ -125,7 +125,6 @@ def _get_add_del_id_maps(
 ) -> tuple[dict[int, Member], dict[int, Member]]:
     existing_by_username = get_username_map(record.current.values())
     incoming_by_username = get_username_map(club.get_members(session))
-    print("got existing and incoming by username")
     additions: list[Member] = []
     deletions: list[Member] = []
     for username in incoming_by_username.keys() | existing_by_username.keys():
@@ -139,10 +138,8 @@ def _get_add_del_id_maps(
         ):
             additions.append(incoming_by_username[username])
             deletions.append(existing_by_username[username])
-    print(f"got additions ({len(additions)}) and deletions ({len(deletions)})")
     for member in additions:
         member.update_player_id(session)
-    print("updated player ids for additions")
     additions_by_id = get_player_id_map(additions)
     deletions_by_id = get_player_id_map(deletions)
     return (additions_by_id, deletions_by_id)
@@ -156,11 +153,9 @@ def _compare(
 
     club = Club.from_str(session, club_name)
     change_manager = _ChangeManager()
-    print("about to get id maps")
     additions_by_id, deletions_by_id = _get_add_del_id_maps(
         session, club, record
     )
-    print("got id maps")
 
     # examining old names that disappeared
     for old_id in deletions_by_id:
