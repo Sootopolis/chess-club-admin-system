@@ -27,6 +27,13 @@ def get_player_id_map(members: Iterable[Member]) -> dict[int, Member]:
     return player_id_map
 
 
+def get_username_map(members: Iterable[Member]) -> dict[str, Member]:
+    username_map: dict[str, Member] = {}
+    for member in members:
+        username_map[member.username] = member
+    return username_map
+
+
 def validate_email(email: str) -> bool:
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     if re.match(pattern, email):
