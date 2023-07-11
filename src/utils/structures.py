@@ -233,21 +233,6 @@ class Member(_Player):
     joined: Optional[int] = None
     is_active: bool = field(default=True, metadata=_remap("is_active"))
 
-    def __hash__(self) -> int:
-        return hash(self.username)
-
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, _Player):
-            raise TypeError("cannot compare `Member` with non `_Player`")
-        # not using `is not None` for backwards compatibility!
-        if isinstance(__value, Member):
-            if not (
-                equal_if_truthy(self.joined, __value.joined)
-                and equal_if_truthy(self.player_id, __value.player_id)
-            ):
-                return False
-        return self.username == __value.username
-
     def __lt__(self, __value: object) -> bool:
         if not isinstance(__value, _Player):
             raise TypeError("cannot compare a `Member` with non `_Player`")
@@ -376,8 +361,7 @@ class Configs(dw.JSONWizard):
     @property
     def _http_header(self) -> dict[str, str]:
         return {
-            "User-Agent": self.username,
-            "From": self.email,
+            "User-Agent": f"email: {self.email}, username: {self.username}",
             "Accept": "application/json",
         }
 
