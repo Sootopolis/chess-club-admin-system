@@ -3,7 +3,6 @@ import os
 
 from .structures import Member, MemberRecords
 
-
 DIR = "CSV_files/{}"
 PATH = f"{DIR}/members.csv"
 HEADER = ("username", "player_id", "joined", "is_active")
