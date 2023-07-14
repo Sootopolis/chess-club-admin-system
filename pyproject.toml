@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ccas"
+name = "chess-club-admin-system"
 version = "0.0.1"
 description = "automating chess.com club admin tasks"
 authors = ["Wallace <yuzhuo.w@gmail.com>"]
