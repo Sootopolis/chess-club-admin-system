@@ -4,19 +4,14 @@ from typing import Optional
 import click
 import requests
 
+from ..utils.config_structures import Configs
 from ..utils.functions import (
     get_member_records,
     get_player_id_map,
     get_username_map,
     updated_members_data,
 )
-
-from ..utils.structures import (
-    Club,
-    Configs,
-    Member,
-    MemberRecords,
-)
+from ..utils.structures import Club, Member, MemberRecords
 
 
 @dataclass
@@ -89,9 +84,7 @@ class _ChangeManager:
         self.renamed_returned = _Returners("renamed & returned", True)
 
     @staticmethod
-    def _update_records(
-        record: MemberRecords, changes: _Changes | _Returners
-    ) -> None:
+    def _update_records(record: MemberRecords, changes: _Changes | _Returners) -> None:
         members: list[Member] = changes.get_members()
         if changes.active is not None:
             record.update(members, changes.active)
@@ -145,17 +138,13 @@ def _get_add_del_id_maps(
     return (additions_by_id, deletions_by_id)
 
 
-def _compare(
-    session: requests.Session, club_name: str, record: MemberRecords
-) -> None:
+def _compare(session: requests.Session, club_name: str, record: MemberRecords) -> None:
     """compares membership and prints differences,
     outputs list of current and former members"""
 
     club = Club.from_str(session, club_name)
     change_manager = _ChangeManager()
-    additions_by_id, deletions_by_id = _get_add_del_id_maps(
-        session, club, record
-    )
+    additions_by_id, deletions_by_id = _get_add_del_id_maps(session, club, record)
 
     # examining old names that disappeared
     for old_id in deletions_by_id:

@@ -1,7 +1,7 @@
 import click
 
+from ..utils.config_structures import Configs
 from ..utils.functions import validate_email
-from ..utils.structures import Configs
 
 
 @click.command()

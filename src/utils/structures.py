@@ -1,33 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Optional
+from typing import Iterable, Optional, Self
 
 import dataclass_wizard as dw
 import requests
-import yaml
 
-# helper functions
-
-
-def equal_if_truthy(a: Any, b: Any) -> bool:
-    return not a or not b or a == b
-
-
-def _remap(*keys: str) -> dict[str, dw.models.JSON]:
-    """returns remapping information for field metadata.
-    `keys` are possible names you want mapped into the attribute.
-    by default, camel cases are mapped into snake cases."""
-
-    return {"__remapping__": dw.json_key(*keys, all=True)}
-
-
-def _get_data(session: requests.Session, url: str, timeout: int = 5):
-    """gets data from the chess.com public api using url"""
-
-    response = session.get(url, timeout=timeout)
-    response.raise_for_status()
-    data = response.json()
-    return data
-
+from .dataclass_wizard_utils import get_data, remap
 
 # data structures
 
@@ -39,9 +16,9 @@ class _PlayerGameTypeLast(dw.JSONWizard):
 
 @dataclass
 class _PlayerGameTypeRecord(dw.JSONWizard):
-    wins: int = field(metadata=_remap("win"))
-    draws: int = field(metadata=_remap("draw"))
-    losses: int = field(metadata=_remap("loss"))
+    wins: int = field(metadata=remap("win"))
+    draws: int = field(metadata=remap("draw"))
+    losses: int = field(metadata=remap("loss"))
     time_per_move: int
     timeout_percent: float
 
@@ -65,9 +42,7 @@ class _PlayerStats(dw.JSONWizard):
 @dataclass
 class _Player(dw.JSONWizard):
     username: str
-    player_id: Optional[int] = field(
-        default=None, metadata=_remap("player_id")
-    )
+    player_id: Optional[int] = field(default=None, metadata=remap("player_id"))
 
     @property
     def api(self) -> str:
@@ -75,7 +50,7 @@ class _Player(dw.JSONWizard):
 
     def update_player_id(self, session: requests.Session) -> None:
         if self.player_id is None:
-            data = _get_data(session, self.api)
+            data = get_data(session, self.api)
             self.player_id = Member.from_dict(data).player_id
 
     @property
@@ -87,9 +62,7 @@ class _Player(dw.JSONWizard):
         return f"{self.api}/clubs"
 
     def get_club_urls(self, session: requests.Session) -> list[str]:
-        data: dict[str, list[dict[str, str]]] = _get_data(
-            session, self.api_clubs
-        )
+        data: dict[str, list[dict[str, str]]] = get_data(session, self.api_clubs)
         return [club["url"] for club in data["clubs"]]
 
     @property
@@ -97,7 +70,7 @@ class _Player(dw.JSONWizard):
         return f"{self.api}/stats"
 
     def get_stats(self, session: requests.Session) -> _PlayerStats:
-        return _PlayerStats.from_dict(_get_data(session, self.api_stats))
+        return _PlayerStats.from_dict(get_data(session, self.api_stats))
 
     @property
     def api_matches(self) -> str:
@@ -124,7 +97,7 @@ class _ClubMembers(dw.JSONWizard):
 
 @dataclass
 class _ClubMatch(dw.JSONWizard):
-    api: str = field(metadata=_remap("@id"))
+    api: str = field(metadata=remap("@id"))
     name: str
     opponent: str
     time_class: str
@@ -164,7 +137,7 @@ class _MatchPlayer(dw.JSONWizard):
 
 @dataclass
 class _MatchTeam(dw.JSONWizard):
-    api: str = field(metadata=_remap("@id"))
+    api: str = field(metadata=remap("@id"))
     name: str
     score: int
     players: list[_MatchPlayer]
@@ -179,7 +152,7 @@ class _MatchTeams(dw.JSONWizard):
 
 @dataclass
 class _GamePlayer(dw.JSONWizard):
-    api: str = field(metadata=_remap("@id"))
+    api: str = field(metadata=remap("@id"))
     username: str
     result: str
 
@@ -201,17 +174,17 @@ class Board(dw.JSONWizard):
     board_scores: dict[str, int]
     games: list[_Game]
 
-    @staticmethod
-    def from_str(session: requests.Session, s: str):
+    @classmethod
+    def from_str(cls, session: requests.Session, s: str) -> Self:
         """gets `Board` object from api url"""
-        return Board.from_dict(_get_data(session, s))
+        return cls.from_dict(get_data(session, s))
 
 
 @dataclass
 class Match(dw.JSONWizard):
     """object that represents a match, initialise with `from_str()`"""
 
-    api: str = field(metadata=_remap("@id"))
+    api: str = field(metadata=remap("@id"))
     name: str
     url: str
     status: str
@@ -221,16 +194,16 @@ class Match(dw.JSONWizard):
     start_time: Optional[int] = None
     end_time: Optional[int] = None
 
-    @staticmethod
-    def from_str(session: requests.Session, s: str):
+    @classmethod
+    def from_str(cls, session: requests.Session, s: str) -> Self:
         """gets `Match` object with api url"""
-        return Match.from_dict(_get_data(session, s))
+        return cls.from_dict(get_data(session, s))
 
 
 @dataclass
 class Member(_Player):
     joined: Optional[int] = None
-    is_active: bool = field(default=True, metadata=_remap("is_active"))
+    is_active: bool = field(default=True, metadata=remap("is_active"))
 
     def __lt__(self, __value: object) -> bool:
         if not isinstance(__value, _Player):
@@ -254,10 +227,10 @@ class MemberWithStats(Member):
 class Club(dw.JSONWizard):
     """object that represents a club, initialise with `from_str()`"""
 
-    api: str = field(metadata=_remap("@id"))
+    api: str = field(metadata=remap("@id"))
     name: Optional[str] = None
     club_id: Optional[int] = None
-    admins: list[str] = field(default_factory=list, metadata=_remap("admin"))
+    admins: list[str] = field(default_factory=list, metadata=remap("admin"))
 
     @property
     def url_name(self) -> str:
@@ -273,7 +246,7 @@ class Club(dw.JSONWizard):
 
     def get_members(self, session: requests.Session) -> list[Member]:
         """returns list of club members"""
-        data = _get_data(session, self.api_members)
+        data = get_data(session, self.api_members)
         return _ClubMembers.from_dict(data).all
 
     @property
@@ -282,10 +255,10 @@ class Club(dw.JSONWizard):
 
     def get_matches(self, session: requests.Session) -> _ClubMatches:
         """returns matches of the club as `ClubMatches` object"""
-        return _ClubMatches.from_dict(_get_data(session, self.api_matches))
+        return _ClubMatches.from_dict(get_data(session, self.api_matches))
 
-    @staticmethod
-    def from_str(session: requests.Session, s: str) -> "Club":
+    @classmethod
+    def from_str(cls, session: requests.Session, s: str) -> Self:
         """gets `Club` object from:
 
         1. url
@@ -301,72 +274,7 @@ class Club(dw.JSONWizard):
 
         s = "-".join(s.strip(" /").split("/")[-1].split())
         api = f"https://api.chess.com/pub/club/{s}"
-        return Club.from_dict(_get_data(session, api))
-
-
-# data structures for user configurations
-
-
-@dataclass
-class _RecruitmentConfigs(dw.JSONWizard):
-    avoid_admins: bool = True
-    timeout_expiry: int = 90
-    checked_expiry: int = 30
-    min_elo: int = 1000
-    max_elo: int = 2000
-    min_score_rate: float = 0.45
-    max_score_rate: float = 0.85
-    min_matches_played: int = 10
-    min_matches_ongoing: int = 1
-    max_games_ongoing: int = 100
-    max_clubs: int = 35
-    max_hrs_per_move: int = 18
-    max_hrs_offline: int = 48
-
-
-@dataclass
-class ClubConfig(dw.JSONWizard):
-    recruitment: _RecruitmentConfigs
-
-
-@dataclass
-class Configs(dw.JSONWizard):
-    email: str = ""
-    username: str = ""
-    default_club_name: str = field(metadata=_remap("default_club"), default="")
-    club_configs: dict[str, ClubConfig] = field(
-        metadata=_remap("club_configs"), default_factory=dict
-    )
-
-    def __post_init__(self):
-        if self.all_club_names and not self.default_club_name:
-            self.default_club_name = self.all_club_names[0]
-
-    @staticmethod
-    def from_yaml() -> "Configs":
-        with open("configs/configs.yml") as stream:
-            yml = yaml.safe_load(stream)
-        return Configs.from_dict(yml)
-
-    @property
-    def _http_header(self) -> dict[str, str]:
-        return {
-            "User-Agent": f"email: {self.email}, username: {self.username}",
-            "Accept": "application/json",
-        }
-
-    @property
-    def session(self) -> requests.Session:
-        session = requests.session()
-        session.headers.update(self._http_header)
-        return session
-
-    @property
-    def all_club_names(self) -> list[str]:
-        return list(self.club_configs.keys())
-
-    def get_club_configs(self, club_name: str) -> ClubConfig:
-        return self.club_configs[club_name]
+        return cls.from_dict(get_data(session, api))
 
 
 # data structures for local handling
