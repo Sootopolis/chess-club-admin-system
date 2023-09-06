@@ -1,7 +1,7 @@
-from enum import StrEnum, auto
-
 from sqlalchemy import TIMESTAMP, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+from .alchemy_enums import CandidateStatus, MatchStatus
 
 
 class Base(DeclarativeBase, MappedAsDataclass):
@@ -25,19 +25,27 @@ class MemberStatsORM(MemberORM):
     losses: Mapped[int] = mapped_column(default=0)
 
 
-class CandidateStatus(StrEnum):
-    JOINED = auto()
-    INVITED = auto()
-    TIMEOUT = auto()
-    CHECKED = auto()
-
-
 class CandidateORM(Base):
     __tablename__ = "candidate"
     player_id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True, nullable=False)
     scanned: Mapped[int] = mapped_column(TIMESTAMP, nullable=False)
     status: Mapped[CandidateStatus] = mapped_column(nullable=False)
+
+
+class ClubORM(Base):
+    __tablename__ = "club"
+    club_id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    url_name: Mapped[str] = mapped_column(nullable=False)
+
+
+class ClubMatch(Base):
+    __tablename__ = "club_match"
+    match_id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[MatchStatus] = mapped_column(nullable=False)
+    start_time: Mapped[int] = mapped_column(TIMESTAMP, nullable=True)
+    end_time: Mapped[int] = mapped_column(TIMESTAMP, nullable=True)
 
 
 wallace = MemberORM(0, "wallace", 0, True)
